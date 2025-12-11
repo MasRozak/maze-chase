@@ -4,8 +4,8 @@ extends CharacterBody2D
 var game_manager: Node = null
 
 # Movement settings
-@export var base_speed : float = 50.0
-@export var chase_speed : float = 80.0
+@export var base_speed : float = 40.0
+@export var chase_speed : float = 65.0
 @export var detection_range : float = 300.0
 @export var wander_enabled : bool = true
 

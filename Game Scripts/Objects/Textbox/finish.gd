@@ -2,6 +2,10 @@ extends Area2D
 
 @onready var game_manager: Node = get_node_or_null("/root/GameManager")
 
+# Audio players
+var correct_sound: AudioStreamPlayer
+var incorrect_sound: AudioStreamPlayer
+
 @export var target_level : PackedScene
 var answer_text : String = ""
 var answer_index : int = -1
@@ -18,6 +22,9 @@ var is_processing_answer : bool = false
 var is_ui_ready : bool = false
 
 func _ready():
+	# Setup audio players
+	_setup_audio_players()
+	
 	# PENTING: Reset monitoring setiap kali scene restart
 	monitoring = true
 	monitorable = true
@@ -41,6 +48,26 @@ func _ready():
 	
 	print("🔄 Finish area initialized - monitoring: ", monitoring, " answer_index: ", answer_index)
 	print("✅ UI ready: ", is_ui_ready)
+
+func _setup_audio_players():
+	"""Setup audio players for correct/incorrect answers"""
+	# Correct sound
+	correct_sound = AudioStreamPlayer.new()
+	correct_sound.name = "CorrectSound"
+	var correct_stream = load("res://Assets/Audio/Audio_Correct.mp3")
+	if correct_stream:
+		correct_sound.stream = correct_stream
+	add_child(correct_sound)
+	
+	# Incorrect sound (using lose health sound for now)
+	incorrect_sound = AudioStreamPlayer.new()
+	incorrect_sound.name = "IncorrectSound"
+	var incorrect_stream = load("res://Assets/Audio/Audio_Lose-Health.mp3")
+	if incorrect_stream:
+		incorrect_sound.stream = incorrect_stream
+	add_child(incorrect_sound)
+	
+	print("🔊 Finish audio players initialized")
 
 func reset_for_new_question():
 	"""Reset finish node untuk menerima pertanyaan baru"""
@@ -547,10 +574,14 @@ func create_teleport_effect(pos: Vector2):
 		particles.queue_free()
 
 func play_success_sound():
-	print("🔊 Success!")
+	if correct_sound:
+		correct_sound.play()
+	print("🔊 Success! Correct answer!")
 
 func play_fail_sound():
-	print("🔊 Fail!")
+	if incorrect_sound:
+		incorrect_sound.play()
+	print("🔊 Fail! Wrong answer!")
 
 func play_death_animation(player: Node2D):
 	if not is_instance_valid(player):

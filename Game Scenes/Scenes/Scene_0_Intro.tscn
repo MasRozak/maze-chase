@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://c5c3eayk512sn"]
+[gd_scene load_steps=3 format=3 uid="uid://c5c3eayk512sn"]
 
 [ext_resource type="Texture2D" uid="uid://qfo7nea0d5ov" path="res://Assets/Scene/Scene_0_Intro.png" id="1_4ayu5"]
+[ext_resource type="AudioStream" path="res://Assets/Audio/Audio_Loading.mp3" id="2_loading"]
 
 [node name="Node" type="Node"]
 
@@ -12,3 +13,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("1_4ayu5")
+
+[node name="LoadingBGM" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_loading")
+autoplay = true

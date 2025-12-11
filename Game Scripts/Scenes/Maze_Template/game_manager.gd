@@ -1,5 +1,10 @@
 extends Node
 
+# Audio players
+var lose_health_sound: AudioStreamPlayer
+var defeat_sound: AudioStreamPlayer
+var victory_sound: AudioStreamPlayer
+
 # ==================== QUIZ SYSTEM ====================
 # Quiz data
 var current_question : String = ""
@@ -36,6 +41,9 @@ signal all_questions_completed
 
 # ==================== READY ====================
 func _ready():
+	# Initialize audio players
+	_setup_audio_players()
+	
 	# Initialize lives
 	current_lives = max_lives
 	
@@ -44,6 +52,34 @@ func _ready():
 	
 	print("🎮 GameManager initialized")
 	print("💚 Lives: ", current_lives, "/", max_lives)
+
+func _setup_audio_players():
+	"""Setup all audio players"""
+	# Lose Health Sound
+	lose_health_sound = AudioStreamPlayer.new()
+	lose_health_sound.name = "LoseHealthSound"
+	var lose_health_stream = load("res://Assets/Audio/Audio_Lose-Health.mp3")
+	if lose_health_stream:
+		lose_health_sound.stream = lose_health_stream
+	add_child(lose_health_sound)
+	
+	# Defeat Sound
+	defeat_sound = AudioStreamPlayer.new()
+	defeat_sound.name = "DefeatSound"
+	var defeat_stream = load("res://Assets/Audio/Audio_Defeat.mp3")
+	if defeat_stream:
+		defeat_sound.stream = defeat_stream
+	add_child(defeat_sound)
+	
+	# Victory Sound
+	victory_sound = AudioStreamPlayer.new()
+	victory_sound.name = "VictorySound"
+	var victory_stream = load("res://Assets/Audio/Audio_Victory.mp3")
+	if victory_stream:
+		victory_sound.stream = victory_stream
+	add_child(victory_sound)
+	
+	print("🔊 Audio players initialized")
 
 # Detect ketika scene tree berubah (autoload method)
 func _notification(what):
@@ -266,6 +302,9 @@ func on_correct_answer():
 	# Check if all questions completed
 	if is_all_questions_answered():
 		print("🎉 ALL QUESTIONS COMPLETED!")
+		# Play victory sound
+		if victory_sound:
+			victory_sound.play()
 		all_questions_completed.emit()
 		return true  # Game selesai
 	
@@ -397,6 +436,11 @@ func lose_life():
 	if current_lives > 0:
 		current_lives -= 1
 		print("💔 Life lost! Lives remaining: ", current_lives, "/", max_lives)
+		
+		# Play lose health sound
+		if lose_health_sound:
+			lose_health_sound.play()
+		
 		print("💔 Emitting lives_changed signal with value: ", current_lives)
 		
 		# Emit signal
@@ -466,6 +510,12 @@ func get_is_invincible() -> bool:
 # ==================== GAME OVER ====================
 func trigger_game_over():
 	print("☠️ GAME OVER!")
+	
+	# Play defeat sound
+	if defeat_sound:
+		defeat_sound.play()
+		# Wait for sound to finish
+		await defeat_sound.finished
 	
 	# IMPORTANT: Reset quiz progress before game over
 	reset_quiz()
