@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3 uid="uid://dig4lgvhmn4ch"]
+
+[ext_resource type="Texture2D" uid="uid://d4ngw7owpkngi" path="res://Assets/Scene/Ending B_ Consumed (Bad Ending).png" id="1_1a03b"]
+[ext_resource type="Script" path="res://Game Scripts/Scenes/game_over.gd" id="1_u8htn"]
+
+[node name="Node" type="Node"]
+script = ExtResource("1_u8htn")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+texture_filter = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -24.0
+offset_top = -23.0
+offset_right = 25.0
+offset_bottom = 27.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_1a03b")
+
+[node name="Button" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -286.0
+offset_top = -134.0
+offset_right = -30.0
+offset_bottom = -62.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "BACK TO MENU"
+
+[connection signal="pressed" from="Button" to="." method="_on_button_pressed"]

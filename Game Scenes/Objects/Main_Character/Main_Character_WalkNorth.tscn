@@ -1,0 +1,71 @@
+[gd_scene load_steps=7 format=3 uid="uid://cpau6lvgg5wn"]
+
+[ext_resource type="Script" path="res://Game Scripts/Objects/Main_Character/main_character_walk_north.gd" id="1_7ocue"]
+[ext_resource type="Texture2D" uid="uid://bxwqv6wt0u74j" path="res://Game Assets/Objects/Main_Character/Main_Character_WalkBack.png" id="1_fiwe2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yuqaa"]
+atlas = ExtResource("1_fiwe2")
+region = Rect2(0, 0, 82, 102)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mp2se"]
+atlas = ExtResource("1_fiwe2")
+region = Rect2(82, 102, 82, 102)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_kry47"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yuqaa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yuqaa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mp2se")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mp2se")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yuqaa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yuqaa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mp2se")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mp2se")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yuqaa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yuqaa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mp2se")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mp2se")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4o503"]
+radius = 28.0
+height = 92.0
+
+[node name="CharacterBody2D" type="CharacterBody2D"]
+script = ExtResource("1_7ocue")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_kry47")
+frame_progress = 0.911772
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(2, 1)
+shape = SubResource("CapsuleShape2D_4o503")

@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0lukj8a7d5wh"]
+
+[ext_resource type="Texture2D" uid="uid://n3r74eiq0j8k" path="res://Assets/Scene/Ending A_ Wake Up (Good Ending).png" id="1_pcwc1"]
+
+[node name="Node" type="Node"]
+
+[node name="TextureRect" type="TextureRect" parent="."]
+texture_filter = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_pcwc1")

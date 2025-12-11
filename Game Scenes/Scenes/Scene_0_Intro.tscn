@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://c5c3eayk512sn"]
+
+[ext_resource type="Texture2D" uid="uid://qfo7nea0d5ov" path="res://Assets/Scene/Scene_0_Intro.png" id="1_4ayu5"]
+
+[node name="Node" type="Node"]
+
+[node name="TextureRect" type="TextureRect" parent="."]
+texture_filter = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_4ayu5")

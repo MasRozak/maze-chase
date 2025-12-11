@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+	<title>FP Pemweb - Godot Game</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #222;
+			color: #e0e0e0;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			overflow: hidden;
+		}
+
+		#canvas-container {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100vw;
+			height: 100vh;
+		}
+
+		#canvas {
+			display: block;
+			margin: 0;
+			color: white;
+			image-rendering: pixelated;
+			image-rendering: crisp-edges;
+		}
+
+		#canvas:focus {
+			outline: none;
+		}
+
+		#status {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background-color: #222;
+			z-index: 9999;
+		}
+
+		#status-progress {
+			width: 366px;
+			height: 7px;
+			background-color: #38363A;
+			border: 1px solid #444;
+			padding: 1px;
+			box-shadow: 0 0 2px 1px #1B1C22;
+			border-radius: 2px;
+		}
+
+		#status-progress-inner {
+			height: 100%;
+			width: 0;
+			box-sizing: border-box;
+			transition: width 0.5s linear;
+			background-color: #5865F2;
+			border: 1px solid #5865F2;
+			border-radius: 3px;
+		}
+
+		#status-indeterminate {
+			height: 42px;
+			visibility: visible;
+			position: relative;
+		}
+
+		#status-indeterminate > div {
+			width: 4.5px;
+			height: 0;
+			background-color: #5865F2;
+			position: absolute;
+			top: 50%;
+			margin-top: -21px;
+			margin-left: -2px;
+			animation: statusIndeterminate 0.85s ease infinite;
+		}
+
+		#status-indeterminate > div:nth-child(1) { left: 15%; animation-delay: 0.2s; }
+		#status-indeterminate > div:nth-child(2) { left: 30%; animation-delay: 0.4s; }
+		#status-indeterminate > div:nth-child(3) { left: 45%; animation-delay: 0.6s; }
+		#status-indeterminate > div:nth-child(4) { left: 60%; animation-delay: 0.8s; }
+		#status-indeterminate > div:nth-child(5) { left: 75%; animation-delay: 1.0s; }
+
+		@keyframes statusIndeterminate {
+			0% { height: 0; }
+			40%, 60% { height: 42px; }
+			100% { height: 0; }
+		}
+
+		#status-notice {
+			margin: 0 100px;
+			line-height: 1.3;
+			text-align: center;
+			font-size: 14px;
+			color: #e0e0e0;
+		}
+
+		/* Debug Console Styles */
+		#debug-console {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 200px;
+			background: rgba(0, 0, 0, 0.9);
+			color: #0f0;
+			font-family: 'Courier New', monospace;
+			font-size: 12px;
+			overflow-y: auto;
+			padding: 10px;
+			border-top: 2px solid #0f0;
+			display: none;
+			z-index: 10000;
+		}
+
+		#debug-console.active {
+			display: block;
+		}
+
+		#debug-toggle {
+			position: fixed;
+			bottom: 10px;
+			right: 10px;
+			background: #5865F2;
+			color: white;
+			border: none;
+			padding: 10px 15px;
+			cursor: pointer;
+			border-radius: 5px;
+			z-index: 10001;
+			font-weight: bold;
+		}
+
+		#debug-toggle:hover {
+			background: #4752C4;
+		}
+
+		.console-line {
+			margin: 2px 0;
+		}
+
+		.console-error {
+			color: #ff4444;
+		}
+
+		.console-warning {
+			color: #ffaa00;
+		}
+
+		.console-info {
+			color: #44aaff;
+		}
+	</style>
+</head>
+<body>
+	<div id="canvas-container">
+		<canvas id="canvas">
+			HTML5 canvas appears to be unsupported in the current browser.<br />
+			Please try updating or use a different browser.
+		</canvas>
+	</div>
+
+	<div id="status">
+		<div id="status-progress">
+			<div id="status-progress-inner"></div>
+		</div>
+		<div id="status-indeterminate" style="display: none;">
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+		</div>
+		<div id="status-notice" class="godot"></div>
+	</div>
+
+	<!-- Debug Console -->
+	<div id="debug-console"></div>
+	<button id="debug-toggle" onclick="toggleDebugConsole()">Toggle Debug (F12)</button>
+
+	<script>
+		// Debug Console Management
+		let debugConsole = document.getElementById('debug-console');
+		let isDebugActive = false;
+
+		function toggleDebugConsole() {
+			isDebugActive = !isDebugActive;
+			debugConsole.classList.toggle('active', isDebugActive);
+		}
+
+		function addConsoleLog(message, type = 'info') {
+			let line = document.createElement('div');
+			line.className = 'console-line console-' + type;
+			line.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+			debugConsole.appendChild(line);
+			debugConsole.scrollTop = debugConsole.scrollHeight;
+		}
+
+		// Intercept console methods
+		const originalLog = console.log;
+		const originalError = console.error;
+		const originalWarn = console.warn;
+
+		console.log = function(...args) {
+			addConsoleLog(args.join(' '), 'info');
+			originalLog.apply(console, args);
+		};
+
+		console.error = function(...args) {
+			addConsoleLog(args.join(' '), 'error');
+			originalError.apply(console, args);
+		};
+
+		console.warn = function(...args) {
+			addConsoleLog(args.join(' '), 'warning');
+			originalWarn.apply(console, args);
+		};
+
+		// F12 keyboard shortcut
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'F12') {
+				e.preventDefault();
+				toggleDebugConsole();
+			}
+		});
+
+		// Godot Engine initialization
+		var engine = new Engine();
+		var statusProgress = document.getElementById('status-progress');
+		var statusProgressInner = document.getElementById('status-progress-inner');
+		var statusIndeterminate = document.getElementById('status-indeterminate');
+		var statusNotice = document.getElementById('status-notice');
+		var status = document.getElementById('status');
+
+		function setStatusMode(mode) {
+			if (mode === 'hidden') {
+				status.style.display = 'none';
+			} else {
+				status.style.display = 'flex';
+			}
+			if (mode === 'indeterminate') {
+				statusIndeterminate.style.display = 'block';
+				statusProgress.style.display = 'none';
+			} else {
+				statusIndeterminate.style.display = 'none';
+				statusProgress.style.display = 'block';
+			}
+		}
+
+		function setStatusNotice(text) {
+			while (statusNotice.lastChild) {
+				statusNotice.removeChild(statusNotice.lastChild);
+			}
+			var lines = text.split('\n');
+			lines.forEach((line) => {
+				statusNotice.appendChild(document.createTextNode(line));
+				statusNotice.appendChild(document.createElement('br'));
+			});
+		}
+
+		function displayFailureNotice(err) {
+			console.error('Engine initialization failed:', err);
+			setStatusNotice('Error: ' + err);
+			setStatusMode('indeterminate');
+		}
+
+		var initializing = true;
+		engine.setProgressFunc((current, total) => {
+			if (initializing) {
+				if (total > 0) {
+					statusProgressInner.style.width = (current / total * 100) + '%';
+					setStatusMode('progress');
+					if (current === total) {
+						initializing = false;
+					}
+				} else {
+					setStatusMode('indeterminate');
+				}
+			}
+		});
+
+		const EXECUTABLE_NAME = '$GODOT_BASENAME';
+		const MAIN_PACK = '$GODOT_BASENAME' + '.pck';
+		const EXTRA_ARGS = [];
+
+		engine.startGame({
+			'executable': EXECUTABLE_NAME,
+			'mainPack': MAIN_PACK,
+			'args': EXTRA_ARGS,
+			'canvasResizePolicy': 2,
+		}).then(() => {
+			setStatusMode('hidden');
+			console.log('✅ Game loaded successfully!');
+			console.log('Press F12 or click Toggle Debug button to see logs');
+		}, displayFailureNotice);
+	</script>
+	<script src="$GODOT_BASENAME.js"></script>
+</body>
+</html>

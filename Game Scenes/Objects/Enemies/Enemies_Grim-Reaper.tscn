@@ -1,0 +1,81 @@
+[gd_scene load_steps=9 format=3 uid="uid://ct5xox2j816p"]
+
+[ext_resource type="Texture2D" uid="uid://c116vos6p8ue8" path="res://Assets/Enemies/Enemies_Grim-Reaper.png" id="1_e1yyd"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qxftb"]
+atlas = ExtResource("1_e1yyd")
+region = Rect2(0, 0, 113, 91)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jchns"]
+atlas = ExtResource("1_e1yyd")
+region = Rect2(0, 0, 113, 91)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nhxuc"]
+atlas = ExtResource("1_e1yyd")
+region = Rect2(0, 182, 113, 91)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vg6cy"]
+atlas = ExtResource("1_e1yyd")
+region = Rect2(0, 273, 113, 91)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ib8ju"]
+atlas = ExtResource("1_e1yyd")
+region = Rect2(0, 364, 113, 91)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uhs7n"]
+atlas = ExtResource("1_e1yyd")
+region = Rect2(0, 455, 113, 91)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_chnc4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qxftb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jchns")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nhxuc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vg6cy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ib8ju")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uhs7n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uhs7n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ib8ju")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vg6cy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nhxuc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jchns")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qxftb")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="CharacterBody2D" type="CharacterBody2D"]
+texture_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_chnc4")
+frame_progress = 0.850872
