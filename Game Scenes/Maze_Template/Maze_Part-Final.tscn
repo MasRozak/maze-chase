@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://cpeq7vtbma4rn"]
+[gd_scene load_steps=19 format=3 uid="uid://cpeq7vtbma4rn"]
 
 [ext_resource type="Script" uid="uid://cdijemv1g4e2g" path="res://Game Scripts/Scenes/Maze_Template/game_manager.gd" id="1_3lw4m"]
 [ext_resource type="Script" uid="uid://dbytfwkj5wtwp" path="res://Game Scripts/Scenes/Maze_Template/maze_part_final.gd" id="1_fqrwv"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://dsrbx8gkovhx5" path="res://Game Scenes/TextBox/Finish.tscn" id="7_7oggy"]
 [ext_resource type="Texture2D" uid="uid://dvga6f4xdr3ev" path="res://Assets/Menu_Bar/Health_points/player_life.png" id="10_iljme"]
 [ext_resource type="AudioStream" uid="uid://71ijr1iaqqd8" path="res://Assets/Audio/Audio_Ingame-Maze.mp3" id="11_maze_bgm"]
+[ext_resource type="Script" path="res://Game Scripts/Objects/Main_Character/virtual_joystick.gd" id="12_joystick"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2fmyv"]
 texture = ExtResource("2_7wxu4")
@@ -514,3 +515,13 @@ texture_filter = 1
 layout_mode = 2
 texture = ExtResource("10_iljme")
 expand_mode = 2
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="VirtualJoystick" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("12_joystick")

@@ -3,11 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://be4ae8eyeev61"
-valid=false
+path="res://.godot/imported/PIXELIFYSANS-VARIABLEFONT_WGHT.TTF-20c1663c75c93532f32ab65dceccb660.fontdata"
 
 [deps]
 
 source_file="res://Assets/Fonts/PIXELIFYSANS-VARIABLEFONT_WGHT.TTF"
+dest_files=["res://.godot/imported/PIXELIFYSANS-VARIABLEFONT_WGHT.TTF-20c1663c75c93532f32ab65dceccb660.fontdata"]
 
 [params]
 
@@ -20,8 +21,10 @@ msdf_pixel_range=8
 msdf_size=48
 allow_system_fallback=true
 force_autohinter=false
+modulate_color_glyphs=false
 hinting=1
 subpixel_positioning=1
+keep_rounding_remainders=true
 oversampling=0.0
 Fallbacks=null
 fallbacks=[]

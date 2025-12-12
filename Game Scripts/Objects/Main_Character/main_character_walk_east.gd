@@ -6,14 +6,35 @@ extends CharacterBody2D
 # Variabel @onready untuk mengakses AnimatedSprite2D
 @onready var animated_sprite_2d: AnimatedSprite2D = $AnimatedSprite2D
 
+# Virtual joystick reference
+var joystick: Control = null
+
 func _ready():
 	# Tambahkan ke group "player" agar bisa dideteksi oleh ghost
 	add_to_group("player")
 	print("🎮 Player added to group 'player'")
+	
+	# Cari joystick di scene
+	await get_tree().process_frame
+	joystick = get_tree().current_scene.get_node_or_null("CanvasLayer/VirtualJoystick")
+	if joystick:
+		print("🕹️ Virtual Joystick connected to player")
 
 func _physics_process(delta: float):
-	# 1. Dapatkan arah input
-	var direction: Vector2 = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	# 1. Dapatkan arah input (keyboard/gamepad atau joystick virtual)
+	var direction: Vector2 = Vector2.ZERO
+	
+	# Prioritaskan virtual joystick jika aktif di mobile
+	if joystick and joystick.has_method("get_output"):
+		var joystick_input = joystick.get_output()
+		if joystick_input.length() > 0.1:
+			direction = joystick_input
+		else:
+			# Fallback ke keyboard jika joystick tidak digunakan
+			direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	else:
+		# Keyboard/gamepad input
+		direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 
 	# 2. Hitung velocity
 	if direction:
