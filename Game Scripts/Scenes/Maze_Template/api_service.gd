@@ -1,8 +1,9 @@
 extends Node
 
 # ==================== API CONFIGURATION ====================
+
 # IMPORTANT: Ganti dengan URL API kamu
-const BASE_URL = "http://localhost:4000"  # Ganti dengan domain API kamu
+const BASE_URL = "https://api.it-its.id" # Ganti dengan domain API kamu
 const API_ENDPOINT = "/api/game/game-type/maze-chase/%s/play/public"
 
 # ==================== SIGNALS ====================
@@ -44,6 +45,7 @@ func fetch_game_data(game_id: String):
 	# Jika API memerlukan authentication token, tambahkan di sini:
 	# headers.append("Authorization: Bearer YOUR_TOKEN")
 	
+
 	# Make GET request
 	var error = http_request.request(url, headers, HTTPClient.METHOD_GET)
 	

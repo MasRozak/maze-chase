@@ -11,13 +11,28 @@ var heart_nodes : Array = []
 
 # API Service
 var api_service : Node = null
-var game_id : String = "b2d7d178-53c0-45de-be43-7478e26d9705"  # Ganti dengan game ID yang sesuai
+var game_id : String = ""  # Will be taken from URL parameter
 
 # Loading state
 var is_loading : bool = false
 var loading_label : Label = null
 
+# Countdown Timer
+var countdown_minutes : int = 0
+var countdown_seconds_remaining : float = 0.0
+var countdown_timer_label : Label = null
+var countdown_canvas : CanvasLayer = null
+var is_countdown_active : bool = false
+
 func _ready():
+	# Parse game_id from browser URL
+	game_id = get_game_id_from_url()
+	if game_id.is_empty():
+		push_error("❌ No game_id found in URL!")
+		show_error_message("Game ID not found in URL")
+		return
+	print("🎮 Game ID from URL: ", game_id)
+	
 	# Delay sedikit untuk memastikan semua node ready
 	await get_tree().process_frame
 	
@@ -61,6 +76,53 @@ func setup_api_service():
 	
 	print("🌐 API Service initialized")
 
+func get_game_id_from_url() -> String:
+	"""Parse game_id dari URL browser parent (format: /maze-chase/play/{game_id})"""
+	if OS.has_feature("web"):
+		# Jalankan JavaScript untuk mendapatkan URL path dari PARENT window (React)
+		# Karena Godot di-embed dalam iframe, kita perlu baca URL parent
+		var js_code = """
+			(function() {
+				// Coba baca dari parent window (React), fallback ke current window
+				var path;
+				try {
+					path = window.parent.location.pathname;
+				} catch(e) {
+					// Cross-origin restriction, gunakan current window
+					path = window.location.pathname;
+				}
+				
+				console.log('Parsing URL path:', path);
+				
+				// URL format: /maze-chase/play/{game_id}
+				var parts = path.split('/');
+				
+				// Cari UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+				for (var i = parts.length - 1; i >= 0; i--) {
+					var part = parts[i];
+					if (part.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+						console.log('Found game_id:', part);
+						return part;
+					}
+				}
+				
+				console.log('No UUID found in URL');
+				return '';
+			})();
+		"""
+		var result = JavaScriptBridge.eval(js_code)
+		if result != null and str(result).length() > 0:
+			print("🌐 Game ID from URL (web): ", result)
+			return str(result)
+		else:
+			push_error("❌ Could not parse game_id from URL")
+			return ""
+	else:
+		# Untuk testing di editor/desktop, gunakan default ID
+		var default_id = "b2d7d178-53c0-45de-be43-7478e26d9705"
+		print("🖥️ Running in editor/desktop mode, using default game_id: ", default_id)
+		return default_id
+
 func fetch_game_data_from_api():
 	"""Fetch game data dari API"""
 	is_loading = true
@@ -70,35 +132,51 @@ func fetch_game_data_from_api():
 	api_service.fetch_game_data(game_id)
 
 func _on_game_data_loaded(game_data: Dictionary):
-	"""Callback ketika game data berhasil dimuat dari API"""
+	"""Callback when game data is loaded from API"""
 	print("✅ Game data loaded from API!")
 	is_loading = false
 	hide_loading_indicator()
 	
-	# IMPORTANT: Load data ke GameManager (ini akan auto-reset progress)
+	# IMPORTANT: Load data to GameManager (this will auto-reset progress)
 	GameManager.load_api_game_data(game_data)
 	
-	# Verify reset berhasil
+	# Get countdown from API (in minutes)
+	countdown_minutes = game_data.get("countdown", 0)
+	if countdown_minutes > 0:
+		countdown_seconds_remaining = countdown_minutes * 60.0
+		setup_countdown_ui()
+		start_countdown()
+		print("⏱️ Countdown started: ", countdown_minutes, " minutes")
+	
+	# Verify reset successful
 	var progress = GameManager.get_progress_info()
 	print("📊 Initial Progress after load: Question ", progress["current_question"], "/", progress["total_questions"], " | Score: ", progress["score"])
 	
-	# Connect signal untuk all questions completed
+	# Connect signal for all questions completed
 	if not GameManager.all_questions_completed.is_connected(_on_all_questions_completed):
 		GameManager.all_questions_completed.connect(_on_all_questions_completed)
 	
-	# Setup quiz pertama
+	# Setup first quiz
 	setup_new_quiz_from_api()
 
 func _on_all_questions_completed():
-	"""Callback ketika semua pertanyaan sudah dijawab benar"""
+	"""Callback when all questions have been answered correctly"""
 	print("🎉🎉🎉 CONGRATULATIONS! ALL QUESTIONS COMPLETED! 🎉🎉🎉")
+	
+	# Stop countdown
+	is_countdown_active = false
 	
 	# Show completion screen
 	show_completion_screen()
 
 func show_completion_screen():
-	"""Show layar selesai dengan score final"""
+	"""Show completion screen with final score"""
 	await get_tree().process_frame
+	
+	# Hide countdown UI
+	if countdown_canvas:
+		countdown_canvas.queue_free()
+		countdown_canvas = null
 	
 	var progress = GameManager.get_progress_info()
 	
@@ -146,7 +224,7 @@ func show_completion_screen():
 	
 	# Title label
 	var title_label = Label.new()
-	title_label.text = "🎉 SELAMAT! 🎉"
+	title_label.text = "🎉 CONGRATULATIONS! 🎉"
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if font:
 		title_label.add_theme_font_override("font", font)
@@ -156,7 +234,7 @@ func show_completion_screen():
 	
 	# Subtitle
 	var subtitle = Label.new()
-	subtitle.text = "Semua Pertanyaan Terjawab!"
+	subtitle.text = "All Questions Answered!"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if font:
 		subtitle.add_theme_font_override("font", font)
@@ -181,7 +259,7 @@ func show_completion_screen():
 	
 	# Questions info
 	var questions_label = Label.new()
-	questions_label.text = "Jawaban Benar: %d / %d" % [progress["correct_answers"], progress["total_questions"]]
+	questions_label.text = "Correct Answers: %d / %d" % [progress["correct_answers"], progress["total_questions"]]
 	questions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if font:
 		questions_label.add_theme_font_override("font", font)
@@ -212,7 +290,7 @@ func show_completion_screen():
 	
 	# Play Again button
 	var play_button = Button.new()
-	play_button.text = "Main Lagi"
+	play_button.text = "Play Again"
 	play_button.custom_minimum_size = Vector2(150, 50)
 	if font:
 		play_button.add_theme_font_override("font", font)
@@ -230,20 +308,268 @@ func show_completion_screen():
 	tween.tween_property(panel, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 
 func _on_menu_button_pressed():
-	"""Handle klik tombol Main Menu"""
+	"""Handle Main Menu button click - refresh page to go back"""
 	GameManager.reset_quiz()
-	get_tree().change_scene_to_file("res://Game Scenes/Main_Menu/Main_Menu.tscn")
+	
+	if OS.has_feature("web"):
+		# Refresh page - will automatically go to React main menu
+		JavaScriptBridge.eval("window.parent.location.reload();")
+	else:
+		# Fallback for testing in editor
+		get_tree().quit()
 
 func _on_play_again_pressed():
-	"""Handle klik tombol Main Lagi"""
+	"""Handle Play Again button click"""
 	print("🔄 Play Again pressed - Resetting everything...")
 	
-	# Reset semua progress
+	# Reset all progress
 	GameManager.reset_quiz()
 	GameManager.reset_lives()
 	
 	# Reload scene
 	get_tree().reload_current_scene()
+
+# ==================== COUNTDOWN TIMER ====================
+func setup_countdown_ui():
+	"""Setup countdown timer UI"""
+	# Create canvas layer for timer
+	countdown_canvas = CanvasLayer.new()
+	countdown_canvas.layer = 150
+	countdown_canvas.name = "CountdownLayer"
+	add_child(countdown_canvas)
+	
+	# Screen size: 1152x648
+	# Position: right side, vertically centered
+	var panel_width = 120
+	var panel_height = 50
+	var screen_width = 1152
+	var screen_height = 648
+	
+	# Create timer panel - right side, vertically centered
+	var panel = Panel.new()
+	panel.position = Vector2(screen_width - panel_width - 20, (screen_height - panel_height) / 2)
+	panel.custom_minimum_size = Vector2(panel_width, panel_height)
+	
+	var style_box = StyleBoxFlat.new()
+	style_box.bg_color = Color(0.1, 0.1, 0.1, 0.85)
+	style_box.set_border_width_all(2)
+	style_box.border_color = Color(0.8, 0.2, 0.2, 1.0)
+	style_box.set_corner_radius_all(8)
+	panel.add_theme_stylebox_override("panel", style_box)
+	countdown_canvas.add_child(panel)
+	
+	# Create timer label
+	countdown_timer_label = Label.new()
+	countdown_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	countdown_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	countdown_timer_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	countdown_timer_label.offset_left = 5
+	countdown_timer_label.offset_right = -5
+	countdown_timer_label.offset_top = 5
+	countdown_timer_label.offset_bottom = -5
+	
+	# Load font
+	var font_path = "res://Assets/Fonts/PIXELIFYSANS-VARIABLEFONT_WGHT.TTF"
+	if ResourceLoader.exists(font_path):
+		var font = ResourceLoader.load(font_path, "Font")
+		if font:
+			countdown_timer_label.add_theme_font_override("font", font)
+	
+	countdown_timer_label.add_theme_font_size_override("font_size", 24)
+	countdown_timer_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+	
+	panel.add_child(countdown_timer_label)
+	
+	update_countdown_display()
+	print("⏱️ Countdown UI setup complete")
+
+func start_countdown():
+	"""Start the countdown timer"""
+	is_countdown_active = true
+	print("⏱️ Countdown started!")
+
+func _process(delta: float):
+	"""Process countdown every frame"""
+	if not is_countdown_active:
+		return
+	
+	countdown_seconds_remaining -= delta
+	
+	if countdown_seconds_remaining <= 0:
+		countdown_seconds_remaining = 0
+		is_countdown_active = false
+		on_countdown_finished()
+	
+	update_countdown_display()
+
+func update_countdown_display():
+	"""Update the countdown display"""
+	if countdown_timer_label == null:
+		return
+	
+	var minutes = int(countdown_seconds_remaining / 60)
+	var seconds = int(countdown_seconds_remaining) % 60
+	countdown_timer_label.text = "%02d:%02d" % [minutes, seconds]
+	
+	# Change color when time is low
+	if countdown_seconds_remaining <= 30:
+		countdown_timer_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+	elif countdown_seconds_remaining <= 60:
+		countdown_timer_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.3, 1.0))
+
+func on_countdown_finished():
+	"""Called when countdown reaches zero - player loses"""
+	print("⏱️ TIME'S UP! Game Over!")
+	
+	# Hide countdown UI
+	if countdown_canvas:
+		countdown_canvas.queue_free()
+		countdown_canvas = null
+	
+	# Use Game_Over.tscn scene
+	GameManager.reset_quiz()
+	get_tree().change_scene_to_file("res://Game Scenes/Scenes/Game_Over.tscn")
+
+func show_game_over_screen(reason: String = "Game Over"):
+	"""Show game over screen with options"""
+	# Stop any active gameplay
+	is_countdown_active = false
+	
+	# Hide countdown UI
+	if countdown_canvas:
+		countdown_canvas.queue_free()
+		countdown_canvas = null
+	
+	await get_tree().process_frame
+	
+	var progress = GameManager.get_progress_info()
+	
+	# Create game over overlay
+	var canvas_layer = CanvasLayer.new()
+	canvas_layer.layer = 250
+	canvas_layer.name = "GameOverLayer"
+	add_child(canvas_layer)
+	
+	# Background overlay
+	var overlay = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.85)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	canvas_layer.add_child(overlay)
+	
+	# Game over panel
+	var panel = Panel.new()
+	panel.position = Vector2(276, 124)
+	panel.custom_minimum_size = Vector2(600, 400)
+	
+	var style_box = StyleBoxFlat.new()
+	style_box.bg_color = Color(0.15, 0.1, 0.1, 0.98)
+	style_box.set_border_width_all(4)
+	style_box.border_color = Color(0.8, 0.2, 0.2, 1.0)
+	style_box.set_corner_radius_all(16)
+	panel.add_theme_stylebox_override("panel", style_box)
+	
+	canvas_layer.add_child(panel)
+	
+	# VBoxContainer for content
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.offset_left = 30
+	vbox.offset_top = 30
+	vbox.offset_right = -30
+	vbox.offset_bottom = -30
+	vbox.add_theme_constant_override("separation", 20)
+	panel.add_child(vbox)
+	
+	# Load font
+	var font = null
+	var font_path = "res://Assets/Fonts/PIXELIFYSANS-VARIABLEFONT_WGHT.TTF"
+	if ResourceLoader.exists(font_path):
+		font = ResourceLoader.load(font_path, "Font")
+	
+	# Title label
+	var title_label = Label.new()
+	title_label.text = "💀 GAME OVER 💀"
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if font:
+		title_label.add_theme_font_override("font", font)
+	title_label.add_theme_font_size_override("font_size", 42)
+	title_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+	vbox.add_child(title_label)
+	
+	# Reason label
+	var reason_label = Label.new()
+	reason_label.text = reason
+	reason_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if font:
+		reason_label.add_theme_font_override("font", font)
+	reason_label.add_theme_font_size_override("font_size", 24)
+	reason_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.8, 1.0))
+	vbox.add_child(reason_label)
+	
+	# Spacer
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 20)
+	vbox.add_child(spacer)
+	
+	# Score info
+	var score_label = Label.new()
+	score_label.text = "Score: %d" % progress["score"]
+	score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if font:
+		score_label.add_theme_font_override("font", font)
+	score_label.add_theme_font_size_override("font_size", 36)
+	score_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3, 1.0))
+	vbox.add_child(score_label)
+	
+	# Questions info
+	var questions_label = Label.new()
+	questions_label.text = "Correct Answers: %d / %d" % [progress["correct_answers"], progress["total_questions"]]
+	questions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if font:
+		questions_label.add_theme_font_override("font", font)
+	questions_label.add_theme_font_size_override("font_size", 20)
+	questions_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9, 1.0))
+	vbox.add_child(questions_label)
+	
+	# Spacer
+	var spacer2 = Control.new()
+	spacer2.custom_minimum_size = Vector2(0, 30)
+	vbox.add_child(spacer2)
+	
+	# Button container
+	var button_container = HBoxContainer.new()
+	button_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_container.add_theme_constant_override("separation", 30)
+	vbox.add_child(button_container)
+	
+	# Main Menu button
+	var menu_button = Button.new()
+	menu_button.text = "Main Menu"
+	menu_button.custom_minimum_size = Vector2(150, 50)
+	if font:
+		menu_button.add_theme_font_override("font", font)
+	menu_button.add_theme_font_size_override("font_size", 18)
+	menu_button.pressed.connect(_on_menu_button_pressed)
+	button_container.add_child(menu_button)
+	
+	# Try Again button
+	var retry_button = Button.new()
+	retry_button.text = "Try Again"
+	retry_button.custom_minimum_size = Vector2(150, 50)
+	if font:
+		retry_button.add_theme_font_override("font", font)
+	retry_button.add_theme_font_size_override("font_size", 18)
+	retry_button.pressed.connect(_on_play_again_pressed)
+	button_container.add_child(retry_button)
+	
+	# Animation
+	panel.modulate.a = 0
+	panel.scale = Vector2(0.5, 0.5)
+	
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.5)
+	tween.tween_property(panel, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 
 func _on_game_data_error(error_message: String):
 	"""Callback ketika ada error saat fetch API"""
@@ -370,65 +696,9 @@ func remove_question_panel():
 		print("🗑️ Old question panel removed")
 
 func update_progress_display():
-	"""Update UI untuk menampilkan progress"""
-	var progress = GameManager.get_progress_info()
-	
-	# Debug log untuk verify progress
-	print("📊 Updating progress display: ", progress["current_question"], "/", progress["total_questions"], " | Score: ", progress["score"])
-	
-	# Check jika progress display sudah ada
-	var progress_layer = get_node_or_null("ProgressLayer")
-	if progress_layer:
-		progress_layer.queue_free()
-	
-	# Create new progress display
-	await get_tree().process_frame
-	
-	progress_layer = CanvasLayer.new()
-	progress_layer.layer = 98
-	progress_layer.name = "ProgressLayer"
-	add_child(progress_layer)
-	
-	# Progress panel
-	var progress_panel = Panel.new()
-	progress_panel.position = Vector2(10, 10)
-	progress_panel.custom_minimum_size = Vector2(200, 60)
-	
-	var style_box = StyleBoxFlat.new()
-	style_box.bg_color = Color(0.1, 0.1, 0.15, 0.85)
-	style_box.set_border_width_all(2)
-	style_box.border_color = Color(0.4, 0.35, 0.5, 0.9)
-	style_box.set_corner_radius_all(8)
-	progress_panel.add_theme_stylebox_override("panel", style_box)
-	
-	progress_layer.add_child(progress_panel)
-	
-	# Progress label
-	var progress_label = Label.new()
-	progress_label.text = "Question: %d/%d\nScore: %d" % [
-		progress["current_question"],
-		progress["total_questions"],
-		progress["score"]
-	]
-	
-	# Load font
-	var font_path = "res://Assets/Fonts/PIXELIFYSANS-VARIABLEFONT_WGHT.TTF"
-	if ResourceLoader.exists(font_path):
-		var font = ResourceLoader.load(font_path, "Font")
-		if font:
-			progress_label.add_theme_font_override("font", font)
-	
-	progress_label.add_theme_font_size_override("font_size", 16)
-	progress_label.add_theme_color_override("font_color", Color(0.9, 0.85, 0.75, 1.0))
-	progress_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	progress_label.offset_left = 10
-	progress_label.offset_top = 8
-	progress_label.offset_right = -10
-	progress_label.offset_bottom = -8
-	
-	progress_panel.add_child(progress_label)
-	
-	print("📊 Progress display updated: ", progress["current_question"], "/", progress["total_questions"])
+	"""Update UI untuk menampilkan progress - DIHAPUS"""
+	# Progress display dihapus
+	print("📊 Progress display skipped")
 
 func setup_new_quiz():
 	"""Setup quiz dari static data (fallback)"""

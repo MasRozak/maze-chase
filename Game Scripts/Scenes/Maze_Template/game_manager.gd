@@ -511,16 +511,14 @@ func get_is_invincible() -> bool:
 func trigger_game_over():
 	print("☠️ GAME OVER!")
 	
-	# Play defeat sound
-	if defeat_sound:
-		defeat_sound.play()
-		# Wait for sound to finish
-		await defeat_sound.finished
-	
 	# IMPORTANT: Reset quiz progress before game over
 	reset_quiz()
 	
+	# Go to Game Over scene immediately (sound will play there)
 	get_tree().change_scene_to_file("res://Game Scenes/Scenes/Game_Over.tscn")
+	
+	# Emit signal for compatibility
+	game_over_triggered.emit()
 
 func show_game_over_message():
 	# Create game over label

@@ -18,6 +18,10 @@ var background : Control
 var knob : Control
 
 func _ready():
+	# Force landscape orientation on mobile
+	if OS.has_feature("web"):
+		_force_landscape_orientation()
+	
 	# Only show on mobile/touch devices
 	if not _is_mobile_platform():
 		visible = false
@@ -34,7 +38,59 @@ func _ready():
 func _is_mobile_platform() -> bool:
 	# Check if running on mobile or has touch screen
 	var os_name = OS.get_name()
-	return os_name in ["Android", "iOS", "Web"] or DisplayServer.is_touchscreen_available()
+	
+	# For Web platform, check via JavaScript if it's actually mobile
+	if os_name == "Web":
+		return _is_mobile_web()
+	
+	# For native platforms
+	return os_name in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
+
+func _is_mobile_web() -> bool:
+	"""Detect if running on mobile browser using JavaScript"""
+	var js_code = """
+		(function() {
+			// Check user agent for mobile devices
+			var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+			
+			// Check for mobile keywords
+			var isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+			
+			// Also check for touch support
+			var hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+			
+			// Check screen size (mobile usually < 768px width)
+			var isSmallScreen = window.innerWidth < 768;
+			
+			return isMobile || (hasTouch && isSmallScreen);
+		})();
+	"""
+	var result = JavaScriptBridge.eval(js_code)
+	return result == true
+
+func _force_landscape_orientation():
+	"""Force landscape orientation on mobile web"""
+	var js_code = """
+		(function() {
+			try {
+				// Try to lock screen orientation to landscape
+				if (screen.orientation && screen.orientation.lock) {
+					screen.orientation.lock('landscape').catch(function(err) {
+						console.log('Screen orientation lock failed:', err);
+					});
+				}
+				
+				// Add CSS to suggest landscape
+				var style = document.createElement('style');
+				style.textContent = '@media screen and (orientation: portrait) { body::before { content: "Please rotate your device to landscape mode"; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: white; padding: 20px; border-radius: 10px; z-index: 9999; text-align: center; } }';
+				document.head.appendChild(style);
+			} catch(e) {
+				console.log('Orientation lock not supported:', e);
+			}
+		})();
+	"""
+	JavaScriptBridge.eval(js_code)
+	print("📱 Forced landscape orientation for mobile web")
 
 func _setup_visuals():
 	# Create background circle

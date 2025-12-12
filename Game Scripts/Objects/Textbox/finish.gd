@@ -297,15 +297,10 @@ func handle_correct_answer(body: Node2D):
 		await tree.create_timer(2.0).timeout
 		
 		if all_completed:
-			# Semua pertanyaan sudah dijawab benar - pindah ke scene berikutnya
-			print("🎉 All questions completed! Moving to next level...")
-			if target_level:
-				var result = tree.change_scene_to_packed(target_level)
-				if result != OK:
-					push_error("Failed to change scene to target_level: ", result)
-					tree.change_scene_to_file("res://Game Scenes/Main_Menu/Main_Menu.tscn")
-			else:
-				tree.change_scene_to_file("res://Game Scenes/Main_Menu/Main_Menu.tscn")
+			# Semua pertanyaan sudah dijawab benar - JANGAN auto-redirect
+			# Biarkan completion screen yang handle (user bisa pilih main lagi atau ke menu)
+			print("🎉 All questions completed! Showing completion screen...")
+			# Completion screen akan muncul otomatis dari signal all_questions_completed
 		else:
 			# Masih ada pertanyaan lagi - load pertanyaan selanjutnya
 			print("📝 Loading next question...")
