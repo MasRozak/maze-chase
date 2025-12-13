@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://cvmdx6rqom0v1"]
+[gd_scene load_steps=18 format=3 uid="uid://cvmdx6rqom0v1"]
 
 [ext_resource type="Script" path="res://Game Scripts/Scenes/Maze_Template/maze_part_final.gd" id="1_ujc34"]
 [ext_resource type="Script" path="res://Game Scripts/Scenes/Maze_Template/game_manager.gd" id="2_cmy0l"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://Game Scripts/Objects/Enemies/enemies_ghost_walk.gd" id="8_acplf"]
 [ext_resource type="PackedScene" uid="uid://dsrbx8gkovhx5" path="res://Game Scenes/TextBox/Finish.tscn" id="9_ptud3"]
 [ext_resource type="Texture2D" uid="uid://dvga6f4xdr3ev" path="res://Assets/Menu_Bar/Health_points/player_life.png" id="10_30qk3"]
+[ext_resource type="Script" path="res://Game Scripts/Objects/Main_Character/virtual_joystick.gd" id="11_joystick"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ghsbq"]
 texture = ExtResource("5_qo7g5")
@@ -1356,3 +1357,13 @@ texture_filter = 1
 layout_mode = 2
 texture = ExtResource("10_30qk3")
 expand_mode = 2
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="VirtualJoystick" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("11_joystick")

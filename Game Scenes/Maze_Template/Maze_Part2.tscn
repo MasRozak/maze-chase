@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3 uid="uid://c5v8wodhto1xb"]
+[gd_scene load_steps=12 format=3 uid="uid://c5v8wodhto1xb"]
 
 [ext_resource type="Script" path="res://Game Scripts/Scenes/Maze_Template/maze_part_final.gd" id="1_ny6nc"]
 [ext_resource type="Texture2D" uid="uid://d24j67s0lf04w" path="res://Assets/Terrain/Background_Maze.jpg" id="3_sdy2s"]
 [ext_resource type="Texture2D" uid="uid://b0w5i4cvqsgk5" path="res://Assets/Terrain/Map1_Terrain.png" id="4_5xnvg"]
 [ext_resource type="Texture2D" uid="uid://d1ecgjfdp53jp" path="res://Assets/Terrain/Dungeon_Tileset.png" id="5_gnfdt"]
+[ext_resource type="Script" path="res://Game Scripts/Objects/Main_Character/virtual_joystick.gd" id="6_joystick"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ghsbq"]
 texture = ExtResource("4_5xnvg")
@@ -1260,3 +1261,13 @@ texture_filter = 1
 tile_set = SubResource("TileSet_1ch3e")
 format = 2
 layer_0/tile_data = PackedInt32Array(65537, 524288, 6, 1245218, 524288, 6, 589845, 458752, 7, 524298, 589824, 4, 983057, 262144, 6, 983055, 327680, 1610612742, 131084, 589824, 5, 720908, 262144, 1342177286, 720910, 327680, 6, 655373, 524288, 6, 458782, 327680, 6, 458785, 327680, 805306374, 458783, 262144, 6, 196642, 458752, 7, 1114114, 524288, 6, 327701, 589824, 4, 393229, 458752, 7, 196626, 589824, 3, 262162, 589824, 3, 327698, 589824, 3, 393234, 589824, 3, 458770, 589824, 3, 524306, 589824, 3, 589842, 589824, 3, 589843, 589824, 3, 524307, 589824, 3, 458771, 589824, 3, 393235, 589824, 3, 327699, 589824, 3, 262163, 589824, 3, 196627, 589824, 3, 917524, 589824, 3, 983060, 589824, 3, 983061, 589824, 3, 983062, 589824, 3, 917526, 589824, 3, 917525, 589824, 3, 917507, 589824, 3, 983043, 589824, 3, 1048579, 589824, 3, 1114115, 589824, 3, 917508, 589824, 3, 917509, 589824, 3, 917510, 589824, 3, 983044, 589824, 3, 983045, 589824, 3, 983046, 589824, 3, 1179668, 589824, 3, 1245204, 589824, 3, 1245205, 589824, 3, 1179669, 589824, 3, 786450, 196608, 9)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="VirtualJoystick" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("6_joystick")
